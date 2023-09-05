@@ -2,7 +2,10 @@ export const fileExtensionService = [
 	{
 		id: 1,
 		name: "pdf",
-		allValues: ["png", "jpg"],
+		allValues: [
+			{ id: 1, value: "png", title: "PNG" },
+			{ id: 1, value: "jpg", title: "JPG" },
+		],
 	},
 	{
 		id: 2,

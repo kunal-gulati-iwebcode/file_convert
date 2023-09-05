@@ -18,6 +18,7 @@ import { useDropzone } from "react-dropzone";
 import { useCallback, useState, useEffect } from "react";
 import { fileExtensionService } from "../constants/constant";
 import ConvertApi from "convertapi-js";
+import { disable } from "gatsby/dist/schema/infer/inference-metadata";
 
 const ImageData = [
 	{
@@ -288,6 +289,77 @@ const OptionBtn = styled.button`
 	}
 `;
 
+const ServicesSelectContainer = styled.div`
+	max-width: 529px;
+	border-radius: 4px;
+	box-shadow: 0px 0px 4px 0px rgba(24, 59, 86, 0.2);
+	margin-inline: auto;
+	padding: 24px;
+`;
+
+const ServiceSelectForm = styled.form`
+	display: flex;
+	gap: 16px;
+	margin-bottom: 20px;
+
+	.choice-label {
+		font-size: 20px;
+		display: block;
+	}
+
+	.service-select {
+		display: block;
+		border: 1px solid #c5cbd2;
+		padding-inline: 20px;
+	}
+
+	.service-select option {
+		font-size: 16px;
+	}
+
+	.service-select:focus,
+	.service-select:active {
+		border: 1px solid #c5cbd2;
+		outline: 1px solid #c5cbd2;
+	}
+
+	.service-select:disabled {
+		cursor: not-allowed;
+	}
+`;
+
+const UploadButton = styled.button`
+	width: 100%;
+	border: none;
+	border-radius: 6px;
+	background-color: #0061fe;
+	color: #fff;
+	padding-block: 16px;
+
+	&:disabled {
+		cursor: not-allowed;
+	}
+`;
+
+const DownloadButton = styled.button`
+	width: 100%;
+	border: none;
+	border-radius: 6px;
+	background-color: #0061fe;
+	color: #fff;
+	padding-block: 16px;
+`;
+
+const DownloadHeading = styled.h2`
+	font-size: 24px;
+	font-weight: 400;
+	text-align: center;
+	color: #2B2B2B;
+`;
+
+
+
+
 const Hero = () => {
 	const [filePath, setFilePath] = useState("");
 	const [allServices, setAllServices] = useState([]);
@@ -295,6 +367,9 @@ const Hero = () => {
 	const [file, setFile] = useState<File | null>(null);
 	const [convertedFileUrl, setConvertedFileUrl] = useState<string | null>("");
 
+	const [step, setStep] = useState(1)
+	const [isUploading, setIsUploading] = useState(false)
+	
 
 
 	const onDrop = useCallback((acceptedFiles: any) => {
@@ -324,9 +399,12 @@ const Hero = () => {
 		for (let i = 0; i < fileExtensionService.length; i++) {
 			if (fileExtensionService[i].name === filePath) {
 				allServiceConversion = fileExtensionService[i].allValues;
+				setStep((prevStep) => 2);
 			}
 		}
 		setAllServices((prev) => allServiceConversion);
+		
+
 		
 	}, [filePath]);
 
@@ -335,11 +413,37 @@ const Hero = () => {
 		if (!file) {
 			return
 		}
-		let convertApi = ConvertApi.auth("KlyYspWs5vRJiS1k");
-		let params = convertApi.createParams();
-		params.add("File", file);
-		let result = await convertApi.convert(filePath, selectService, params);
-		setConvertedFileUrl(result.files[0].Url);
+		try {
+			setIsUploading((prevState) => true)
+			let convertApi = ConvertApi.auth("KlyYspWs5vRJiS1k");
+			let params = convertApi.createParams();
+			params.add("File", file);
+			let result = await convertApi.convert(
+				filePath,
+				selectService,
+				params
+			);
+			setConvertedFileUrl(result.files[0].Url);
+			setStep((prevStep) => 3);
+			
+		} catch (error) {
+			console.log(error)
+		}
+		finally {
+			setIsUploading((prevState) => false);
+		}
+		
+	}
+
+	const reset = () => {
+		setStep((prevStep) => 1)
+		setFilePath((prev) => "");
+		setAllServices((prev) => []);
+		setSelectService((prev) => "");
+		setFile((prev) => null);
+		setConvertedFileUrl((prev) => "");
+		setIsUploading((prev) => false)
+		
 	}
 
 	const handleDownload = () => {
@@ -350,64 +454,80 @@ const Hero = () => {
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
+			setIsUploading(true)
 		}
+		
+		setTimeout(() => {
+			reset();
+		}, 2000)
 	};
 
 	return (
 		<StyledHeroSection>
 			<div className="container">
 				<HeroContainer>
-					{convertedFileUrl ? (
-						<button onClick={handleDownload} type="button">
-							Download
-						</button>
-					) : null}
-					{allServices ? (
-						<>
-							<StyledHeroSection>
-								<div className="container">
-									<HeroContainer>
-										<div className="convert-choice-form">
-											<form>
-												<label htmlFor="convert-choice">
-													Convert Your File To:
-												</label>
 
-												<select
-													name="choice"
-													id="convert-choice"
-													value={selectService}
-													onChange={(e) =>
-														setSelectService(
-															e.target.value
-														)
-													}
+					{step === 3 ? (
+						<ServicesSelectContainer>
+							<DownloadHeading>
+								Your file is Converted Successfully. Click below
+								button to download.
+							</DownloadHeading>
+							<DownloadButton
+								onClick={handleDownload}
+								type="button"
+							>
+								Download
+							</DownloadButton>
+						</ServicesSelectContainer>
+					) : null}
+
+					{step === 2 ? (
+						<ServicesSelectContainer>
+							<div className="convert-choice-form">
+								<ServiceSelectForm>
+									<label
+										htmlFor="convert-choice"
+										className="choice-label"
+									>
+										Convert Your File To:
+									</label>
+
+									<select
+										name="choice"
+										id="convert-choice"
+										value={selectService}
+										onChange={(e) =>
+											setSelectService(e.target.value)
+										}
+										className="service-select"
+									>
+										<option value=""></option>
+										{allServices?.map((service, idx) => {
+											return (
+												<option
+													value={service.value}
+													key={idx}
 												>
-													<option value=""></option>
-													{allServices
-														? allServices.map?.((service,idx) => {
-																	return (
-																		<option value={service} key={idx}>
-																			{service}
-																		</option>
-																	);
-																}
-														    )
-														: null}
-												</select>
-											</form>
-											<button
-												onClick={handleConvert}
-												type="button"
-											>
-												Upload
-											</button>
-										</div>
-									</HeroContainer>
-								</div>
-							</StyledHeroSection>
-						</>
-					) : (
+													{service.title}
+												</option>
+											);
+										})}
+									</select>
+								</ServiceSelectForm>
+								<UploadButton
+									onClick={handleConvert}
+									type="button"
+									disabled={isUploading}
+									className="upload-button"
+								>
+									Upload
+								</UploadButton>
+							</div>
+						</ServicesSelectContainer>
+					) : null}
+
+					{step === 1 ? (
 						<>
 							<HeroHeading>
 								Convert <span>PDF</span> In Seconds
@@ -575,7 +695,7 @@ const Hero = () => {
 								</ThirdPartyOptions>
 							</FileDropContainer>
 						</>
-					)}
+					) : null}
 				</HeroContainer>
 			</div>
 		</StyledHeroSection>
