@@ -83,7 +83,7 @@ const RightNav = styled.div`
 
 
 const Navbar = () => {
-	const { isAuthenticated, loginWithRedirect, logout } = useAuth0();
+	const { isAuthenticated, loginWithRedirect, logout, user } = useAuth0();
 
 	const [isOpen, setIsOpen] = useState(false)
 
@@ -131,10 +131,7 @@ const Navbar = () => {
 										<button
 											className="nav-btn btn-blue"
 											onClick={() => {
-												logout({
-													returnTo:
-														window.location.origin,
-												});
+												logout({ returnTo: window.location.origin});
 											}}
 										>
 											Logout
@@ -209,4 +206,4 @@ const Navbar = () => {
   );
 }
 
-export default Navbar
+export default Navbar;

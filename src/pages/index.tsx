@@ -9,11 +9,16 @@ import AppLayout from "../components/AppLayout";
 import { Auth0Provider } from "@auth0/auth0-react";
 
 const IndexPage: React.FC<PageProps> = () => {
+
+	if (typeof window !== "undefined")
+
+
 	return (
 		<Auth0Provider
 			domain={process.env.AUTH0_DOMAIN}
-			clientId={process.env.AUTH0_CLIENTID} 
+			clientId={process.env.AUTH0_CLIENTID}
 			redirectUri={window.location.origin}
+			// redirectUri={window.location.origin}
 			// onRedirectCallback={onRedirectCallback}
 		>
 			<AppLayout>
@@ -24,6 +29,8 @@ const IndexPage: React.FC<PageProps> = () => {
 			</AppLayout>
 		</Auth0Provider>
 	);
+
+	return <></>
 };
 
 export default IndexPage;
